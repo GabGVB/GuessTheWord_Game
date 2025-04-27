@@ -298,6 +298,8 @@ int main()
     selectedCountryText.setPosition({1600.f, 1000.f}); // pozitie stanga-sus
     selectedCountryText.setString("Selecteaza o tara!");
 
+    bool dragging=false;
+    sf::Vector2i lastMousePos;
 
     while (window.isOpen())
     {
@@ -313,18 +315,6 @@ int main()
             {
                 if (scroll->wheel == sf::Mouse::Wheel::Vertical)
                 {
-                 //   sf::Vector2f beforeZoom = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-                   /*
-                    if (scroll->delta > 0)
-                        view.zoom(0.9f);  // zoom in
-                    else
-                        view.zoom(1.1f);  // zoom out
-                        */
-
-                //    sf::Vector2f afterZoom = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-
-                  //  view.move(beforeZoom - afterZoom);
-
                   sf::Vector2i pixelPos = sf::Mouse::getPosition(window);
                     sf::Vector2f beforeCoord = window.mapPixelToCoords(pixelPos, view);
 
@@ -335,14 +325,17 @@ int main()
 
                     sf::Vector2f afterCoord = window.mapPixelToCoords(pixelPos, view);
                     view.move(beforeCoord - afterCoord);
-
                 }
             }
 
-
             else if (const auto* mouseButton = event->getIf<sf::Event::MouseButtonPressed>())
             {
-                if (mouseButton->button == sf::Mouse::Button::Left)
+                 if (mouseButton->button == sf::Mouse::Button::Right)
+                {
+                    dragging = true;
+                    lastMousePos = sf::Mouse::getPosition(window);
+                }
+                else if (mouseButton->button == sf::Mouse::Button::Left)
                 {
 
                     sf::Vector2f worldPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
@@ -385,6 +378,23 @@ int main()
                     {
                         std::cout << "Nu exista tara pentru aceasta culoare!\n";
                     }
+                }
+            }
+            else if (event->is<sf::Event::MouseButtonReleased>())
+            {
+                if (event->getIf<sf::Event::MouseButtonReleased>()->button == sf::Mouse::Button::Right)
+                {
+                    dragging = false;
+                }
+            }
+            else if (event->is<sf::Event::MouseMoved>())
+            {
+                if (dragging)
+                {
+                    sf::Vector2i newMousePos = sf::Mouse::getPosition(window);
+                    sf::Vector2f delta = window.mapPixelToCoords(lastMousePos, view) - window.mapPixelToCoords(newMousePos, view);
+                    view.move(delta);
+                    lastMousePos = newMousePos;
                 }
             }
 
