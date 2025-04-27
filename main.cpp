@@ -183,10 +183,10 @@ int main()
 
     std::vector<std::pair<std::string, Tara>> imaginiDeGhicit =
     {
-        {"romania.png", tari[0]},
-        {"brazilia.png", tari[1]},
-        {"australia.png", tari[2]},
-        {"grecia.png", tari[3]}
+        {"locatii/romania.png", tari[0]},
+        {"locatii/brazilia.png", tari[1]},
+        {"locatii/australia.png", tari[2]},
+        {"locatii/grecia.png", tari[3]}
     };
 
     std::srand(static_cast<unsigned int>(std::time(nullptr))); // inițializează random
@@ -201,9 +201,9 @@ int main()
 
     sf::Texture normalTexture,hoverTexture,clickedTexture;
 
-    if (!normalTexture.loadFromFile("normal.png") ||
-            !hoverTexture.loadFromFile("hover.png") ||
-            !clickedTexture.loadFromFile("clicked.png"))
+    if (!normalTexture.loadFromFile("buttons/normal.png") ||
+            !hoverTexture.loadFromFile("buttons/hover.png") ||
+            !clickedTexture.loadFromFile("buttons/clicked.png"))
     {
         std::cerr << "Nu am putut încărca texturile!\n";
         throw std::runtime_error("Eroare texturi buton!");
@@ -218,7 +218,6 @@ int main()
     }
     sf::Sprite introSprite(introTexture);
 
-    // Redimensionăm imaginea să încapă în fereastră
     sf::Vector2u textureSize = introTexture.getSize();
     sf::Vector2u windowSize = introWindow.getSize();
     introSprite.setScale(
@@ -229,24 +228,14 @@ int main()
     );
 
     sf::Font font;
-    if (!font.openFromFile("Dosis-Light.ttf")) // ai nevoie de un font, pune "arial.ttf" lângă .exe
+    if (!font.openFromFile("fonts/Dosis-Light.ttf"))
     {
         std::cout << "Nu am putut încărca fontul!" << std::endl;
         return -1;
     }
-    /*
-        sf::Text guessButtonText( font,"Ghiceste", 30);
-        guessButtonText.setFillColor(sf::Color::White);
-        guessButtonText.setStyle(sf::Text::Bold);
-        guessButtonText.setPosition({300, 500}); // poziționează-l frumos în fereastră
-
-        sf::RectangleShape guessButton(sf::Vector2f({200, 50}));
-        guessButton.setFillColor(sf::Color::Blue);
-        guessButton.setPosition({290, 490}); // puțin mai sus față de text, ca să-l încadreze
-    */
 
     Button guessButton(normalTexture, hoverTexture, clickedTexture, font, "Guess",60,0.4);
-    guessButton.setPosition(1000, 600); // unde vrei să fie butonul
+    guessButton.setPosition(1000, 600);
     bool readyToGuess = false;
     while (introWindow.isOpen() && !readyToGuess)
     {
@@ -267,19 +256,16 @@ int main()
 
 
         }
-        //guessButton.update(introWindow);
 
         introWindow.clear();
         guessButton.update(introWindow);
         introWindow.draw(introSprite);
         guessButton.draw(introWindow);
-        //  introWindow.draw(guessButton);
-        // introWindow.draw(guessButtonText);
         introWindow.display();
     }
 
     if (readyToGuess==false)
-        return 0; // Dacă utilizatorul închide fereastra, ieșim din joc.
+        return 0;
 
 
 
@@ -295,16 +281,22 @@ int main()
         std::cout << "Nu am putut încărca harta alba!" << std::endl;
         return -1;
     }
+
     sf::Sprite sprite(texture);
     sf::Sprite harta(harta_alba);
-    sf::Vector2u size = texture.getSize();
+    sf::Vector2u mapSize = texture.getSize();
 
-    sf::RenderWindow window(sf::VideoMode({size.x, size.y}), "Poza cu culori");
+    sf::RenderWindow window(sf::VideoMode({mapSize.x, mapSize.y}), "Poza cu culori");
     window.setFramerateLimit(60);
-
-    //// Creează o copie a imaginii pentru acces la pixeli
+    sf::View view = window.getDefaultView();
+    sf::View viewColored = window.getDefaultView();
     sf::Image image = texture.copyToImage();
-     sf::Image hartaImageGoala = harta_alba.copyToImage();
+    sf::Image hartaImageGoala = harta_alba.copyToImage();
+
+    sf::Text selectedCountryText(font,"Selecteaza o tara!",30);
+    selectedCountryText.setFillColor(sf::Color::Black);
+    selectedCountryText.setPosition({1600.f, 1000.f}); // pozitie stanga-sus
+    selectedCountryText.setString("Selecteaza o tara!");
 
 
     while (window.isOpen())
@@ -313,21 +305,49 @@ int main()
         {
             if (event->is<sf::Event::Closed>())
                 window.close();
+            else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Scancode::Escape))
+            {
+                window.close();
+            }
+            else if (const auto* scroll = event->getIf<sf::Event::MouseWheelScrolled>())
+            {
+                if (scroll->wheel == sf::Mouse::Wheel::Vertical)
+                {
+                 //   sf::Vector2f beforeZoom = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+                   /*
+                    if (scroll->delta > 0)
+                        view.zoom(0.9f);  // zoom in
+                    else
+                        view.zoom(1.1f);  // zoom out
+                        */
+
+                //    sf::Vector2f afterZoom = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+
+                  //  view.move(beforeZoom - afterZoom);
+
+                  sf::Vector2i pixelPos = sf::Mouse::getPosition(window);
+                    sf::Vector2f beforeCoord = window.mapPixelToCoords(pixelPos, view);
+
+                    if (scroll->delta > 0)
+                        view.zoom(0.9f); // Zoom in
+                    else
+                        view.zoom(1.1f); // Zoom out
+
+                    sf::Vector2f afterCoord = window.mapPixelToCoords(pixelPos, view);
+                    view.move(beforeCoord - afterCoord);
+
+                }
+            }
+
 
             else if (const auto* mouseButton = event->getIf<sf::Event::MouseButtonPressed>())
             {
                 if (mouseButton->button == sf::Mouse::Button::Left)
                 {
-                    sf::Vector2i pos = sf::Mouse::getPosition(window);
-                    //  std::cout << pos.x << ' ' << pos.y << std::endl;
 
-                    sf::Color color = image.getPixel({pos.x, pos.y});
-                    /*
-                    std::cout << "Ai apasat pe pixelul (" << pos.x << ", " << pos.y << ") cu culoarea ("
-                              << (int)color.r << ", "
-                              << (int)color.g << ", "
-                              << (int)color.b << ")\n";
-                    */
+                    sf::Vector2f worldPos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+                    std::cout<<worldPos.x<<' '<<worldPos.y<<std::endl;
+                    sf::Color color = image.getPixel({worldPos.x,worldPos.y});
 
 
                     bool gasit=0;
@@ -335,20 +355,14 @@ int main()
                     {
                         if (color == tara.getCuloare())
                         {
-                            std::cout << "Ai apasat pe tara: " << tara.getNume() << '\n';
-                            gasit = true;
-
-                            if (taraCorecta.getNume()==tara.getNume())
-                                std::cout << "Raspunsul e corect!" << '\n';
-                            else
-                                std::cout << "Raspunsul e gresit!" << '\n';
-
+                            gasit=1;
+                            selectedCountryText.setString("Ai selectat: " + tara.getNume());
                             harta_alba.loadFromImage(hartaImageGoala);
                             sf::Image hartaImage = harta_alba.copyToImage(); // copie imagine din sprite-ul alb
 
-                            for (unsigned int x = 0; x < size.x; ++x)
+                            for (unsigned int x = 0; x < mapSize.x; ++x)
                             {
-                                for (unsigned int y = 0; y < size.y; ++y)
+                                for (unsigned int y = 0; y < mapSize.y; ++y)
                                 {
                                     sf::Color pixelColor = image.getPixel({x, y}); // pixel din harta colorata
                                     if (pixelColor == tara.getCuloare()) // daca e culoarea tarii selectate
@@ -378,8 +392,14 @@ int main()
         }
 
         window.clear();
+
+        window.setView(view);
         window.draw(harta);
-        // window.draw(sprite);
+
+        window.setView(window.getDefaultView());
+        window.draw(selectedCountryText);
+
+        window.setView(view);
         window.display();
     }
 
