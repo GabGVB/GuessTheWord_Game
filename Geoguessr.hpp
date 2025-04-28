@@ -4,14 +4,83 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <iostream>
+#include "vector"
 #include "tara.cpp"
 
+
+void drawHearts(std::vector <sf::Sprite> hearts, std::vector <sf::Sprite> noHearts, sf::RenderWindow& window, int vieti)
+{
+    hearts[0].setPosition({1700,20});
+    hearts[1].setPosition({1760,20});
+    hearts[2].setPosition({1820,20});
+
+    hearts[0].setScale({0.1,0.1});
+    hearts[1].setScale({0.1,0.1});
+    hearts[2].setScale({0.1,0.1});
+
+    noHearts[0].setPosition({1700,20});
+    noHearts[1].setPosition({1760,20});
+    noHearts[2].setPosition({1820,20});
+
+    noHearts[0].setScale({0.1,0.1});
+    noHearts[1].setScale({0.1,0.1});
+    noHearts[2].setScale({0.1,0.1});
+
+    switch(vieti)
+    {
+    case 3:
+        window.draw(hearts[0]);
+        window.draw(hearts[1]);
+        window.draw(hearts[2]);
+        break;
+    case 2:
+        window.draw(hearts[0]);
+        window.draw(hearts[1]);
+        window.draw(noHearts[2]);
+        break;
+    case 1:
+        window.draw(hearts[0]);
+        window.draw(noHearts[1]);
+        window.draw(noHearts[2]);
+        break;
+    default:
+        window.draw(noHearts[0]);
+        window.draw(noHearts[1]);
+        window.draw(noHearts[2]);
+
+    };
+
+}
 int RandomIndex(int nrImg)
 {
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
     return std::rand() %nrImg;
 }
 
+void incarcaTexture (std::string cale, sf::Texture &t)
+{
+
+    if (!t.loadFromFile(cale))
+    {
+        std::cerr << "Nu am putut încãrca texturile!\n";
+        throw std::runtime_error("Eroare texturi!");
+    }
+}
+void changeImage(std::vector<std::pair<std::string, Tara>> img, Tara &taraCorecta,sf::Texture &texture, sf::Sprite &s)
+{
+    int randomIndex = RandomIndex(img.size());
+    taraCorecta = img[randomIndex].second;
+    incarcaTexture(img[randomIndex].first,texture);
+    sf::Sprite newintroSprite(texture);
+    s=newintroSprite;
+    s.setScale({1,1});
+}
+
+
+bool ButtonPressed (sf::Sprite s, sf::Vector2f mousePos)
+{
+    return  s.getGlobalBounds().contains(mousePos);
+}
 
 void zoomViewAt(sf::Vector2i pixel, sf::RenderWindow& window, sf::View& view, float zoomFactor)
 {
@@ -33,15 +102,7 @@ void incarcaFont (std::string cale, sf::Font &f)
     }
 }
 
-void incarcaTexture (std::string cale, sf::Texture &t)
-{
 
-    if (!t.loadFromFile(cale))
-    {
-        std::cerr << "Nu am putut încãrca texturile!\n";
-        throw std::runtime_error("Eroare texturi!");
-    }
-}
 
 void scaleSpriteExtend (sf::Vector2u textureSize,sf::Vector2u windowSize, sf::Sprite &s)
 {

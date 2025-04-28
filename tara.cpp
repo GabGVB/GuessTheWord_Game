@@ -14,7 +14,7 @@ class Tara
     Tara(const std::string& nume, const sf::Color& culoare)
         : nume(nume), culoare(culoare)
     {}
-Tara()=default;
+    Tara()=default;
     Tara(const Tara &t)
     {
         nume=t.nume;
