@@ -83,6 +83,10 @@ public:
     {
         return isClicked;
     }
+    void setClickedFalse ()
+    {
+        isClicked=0;
+    }
 
     sf::Sprite getSprite()
     {
