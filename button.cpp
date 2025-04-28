@@ -41,7 +41,7 @@ public:
     );
     }
 
-    void update(const sf::RenderWindow& window)
+    bool update(const sf::RenderWindow& window)
     {
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
         sf::Vector2f worldPos = window.mapPixelToCoords(mousePos);
@@ -70,6 +70,7 @@ public:
             isHovered = false;
             isClicked = false;
         }
+        return isClicked;
     }
 
     void draw(sf::RenderWindow& window)
@@ -83,32 +84,8 @@ public:
         return isClicked;
     }
 
-};
-
-/*
-private:
-    sf::Sprite sprite;
-    sf::Texture normalTexture;
-    sf::Texture hoverTexture;
-    sf::Texture clickedTexture;
-
-    sf::Text text;
-    sf::Font font;
-
-    bool isHovered = false;
-    bool isClicked = false;
-
-public:
-    Button(const sf::Texture& normalTexture, const sf::Texture& hoverTexture, const sf::Texture& clickedTexture,
-           const sf::Font& font, const std::string& textString, unsigned int charSize = 20)
-        :sprite(normalTexture), normalTexture( normalTexture),
-         hoverTexture(hoverTexture), clickedTexture(clickedTexture),
-         font(font), text(font,textString,charSize)
-
+    sf::Sprite getSprite()
     {
-
-           text.setFillColor(sf::Color::White);
-        text.setStyle(sf::Text::Bold);
-        sprite.setScale({0.5f, 0.5f});
+        return sprite;
     }
-*/
+};

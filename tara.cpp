@@ -6,19 +6,28 @@
 
 class Tara
 {
-public:
+
+
+    std::string nume;
+    sf::Color culoare;
+    public:
     Tara(const std::string& nume, const sf::Color& culoare)
         : nume(nume), culoare(culoare)
+    {}
+Tara()=default;
+    Tara(const Tara &t)
     {
+        nume=t.nume;
+        culoare=t.culoare;
     }
 
     const std::string& getNume() const { return nume; }
     const sf::Color& getCuloare() const { return culoare; }
 
-private:
-    std::string nume;
-    sf::Color culoare;
+
+
 };
+
 
 #endif // TARA_HPP
 
