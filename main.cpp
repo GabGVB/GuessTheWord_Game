@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -10,6 +11,20 @@
 #include "game.hpp"
 int main()
 {
+    const int windowWidth = 1200;
+    const int windowHeight = 800;
+
+
+    sf::Image originalImage;
+    if (!originalImage.loadFromFile("panorama.png"))
+    {
+        std::cerr << "Eroare la încărcarea imaginii!\n";
+        return -1;
+    }
+
+    int originalWidth = originalImage.getSize().x;
+    int height = originalImage.getSize().y;
+
     std::vector<Tara> tari = incarcaTari();
     std::vector<std::pair<std::string, Tara>> imaginiDeGhicit = incarcaImaginiDeGhicit(tari);
     int randomIndex = RandomIndex(imaginiDeGhicit.size());
@@ -17,6 +32,7 @@ int main()
 
     std::string caleImagine = imagineAleasa.first;
     Tara taraCorecta = imagineAleasa.second;
+    taraCorecta=tari[93];
 
     sf::Texture normalTexture, hoverTexture, clickedTexture,introTexture,
     startNormalTexture,startHoverTexture,startClickedTexture,
@@ -33,8 +49,30 @@ int main()
     incarcaTexture("buttons/closeButonHover.png",closeHoverTexture);
     incarcaTexture("buttons/closeButonClicked.png",closeClickedTexture);
     incarcaFont("fonts/Dosis-Light.ttf",font);
+
     incarcaTexture(caleImagine,introTexture);
-    sf::Sprite introSprite(introTexture);
+
+
+
+    sf::Image extendedImage=introTexture.copyToImage();
+    extendedImage.resize({originalWidth + 2 * windowWidth, height});
+    extendedImage.copy(originalImage, {0, 0}, sf::IntRect({originalWidth - windowWidth, 0}, { windowWidth, height}));
+    extendedImage.copy(originalImage, {windowWidth, 0}, sf::IntRect({0, 0}, {originalWidth, height}));
+    extendedImage.copy(originalImage, {windowWidth + originalWidth, 0}, sf::IntRect({0, 0}, {windowWidth, height}));
+
+    sf::Texture extendedTexture;
+    extendedTexture.loadFromImage(extendedImage);
+    sf::Sprite panoramaSprite(extendedTexture);
+
+    int viewX = windowWidth; // De unde începe privirea pe orizontală
+    const int scrollSpeed = 10; // cât de repede ne „rotim”
+
+    sf::Vector2i position(viewX, 0);
+    sf::Vector2i size(windowWidth, windowHeight);
+
+    sf::IntRect viewRect(position, size);
+
+    panoramaSprite.setTextureRect(viewRect);
 
 
 
@@ -77,14 +115,12 @@ int main()
 
     sf::RenderWindow window(sf::VideoMode({mapSize.x, mapSize.y}), "Harta");
     window.setFramerateLimit(60);
-
     scaleSpriteExtend(startImg.getSize(),window.getSize(),startBackground);
     scaleSpriteExtend(backPoze.getSize(),window.getSize(),backImg);
     scaleSpriteExtend(victoryTexture.getSize(),window.getSize(),victorySprite);
     scaleSpriteExtend(lostTexture.getSize(),window.getSize(),lostSprire);
-    scaleSpriteRatio(introTexture.getSize(),window.getSize(),introSprite);
-    spriteCenter(window.getSize(),introSprite);
-
+    scaleSpriteY(extendedTexture.getSize().y,windowHeight,panoramaSprite);
+    spriteCenter(window.getSize(),panoramaSprite);
 
     sf::View view = window.getDefaultView();
     sf::Image image = texture.copyToImage();
@@ -116,12 +152,16 @@ int main()
     Button closeButton(closeNormalTexture, closeHoverTexture, closeClickedTexture, font, "",0,0.3);
     closeButton.setPosition(1880, 10);
 
+    sf::SoundBuffer bufClick;
+    if (!bufClick.loadFromFile("sounds/clickSound.wav"))
+        return -1;
 
+    sf::Sound clickSound(bufClick);
 
 
     sf::Color ocean(182,220,243);
 
-    bool dragging=false;
+    bool dragging=false, notPanorama=false;
     sf::Vector2i lastMousePos;
     Tara* taraSelectata=nullptr, taraConfirmata;
     int vieti=3, gameState=0;
@@ -146,6 +186,7 @@ int main()
 
                 if (startButton.Clicked())
                 {
+                    clickSound.play();
                     gameState=1;
                     startButton.setClickedFalse();
                 }
@@ -155,43 +196,58 @@ int main()
             {
                 if (guessButton.Clicked())
                 {
+                    clickSound.play();
                     gameState=2;
                     guessButton.setClickedFalse();
                 }
                 else if (seeAgainButton.Clicked())
                 {
+                    clickSound.play();
                     gameState=1;
                     seeAgainButton.setClickedFalse();
                 }
+                if (event)
+                {
+                    MouseInteractions(*event,window,view,dragging,lastMousePos);
+                    if (event->is<sf::Event::MouseMoved>())
+                    {
+                        if (dragging)
+                        {
+                            int currentMouseX = sf::Mouse::getPosition(window).x;
+                            int delta = currentMouseX - lastMousePos.x;
+
+                            viewX -= delta; // scroll invers față de mișcarea mouse-ului (efect de „tragere”)
+
+                            // Actualizezi poziția mouse-ului pentru următorul frame
+                            lastMousePos.x = currentMouseX;
+
+                            // Wrap logic, la fel ca pentru taste:
+                            if (viewX > originalWidth + windowWidth)
+                        viewX = windowWidth;
+                            else if (viewX < windowWidth)
+                        viewX = originalWidth + windowWidth;
+                        }
+                    }
+                }
+
+
+
+
+
             }
             else if (gameState==2)
             {
-                if (const auto* scroll = event->getIf<sf::Event::MouseWheelScrolled>())
-                {
-                    if (scroll->wheel == sf::Mouse::Wheel::Vertical)
-                    {
-                        float zoomFactor = (scroll->delta > 0) ? 0.9f : 1.1f;
-                        zoomViewAt(sf::Mouse::getPosition(window), window, view, zoomFactor);
-                    }
-
-                }
-
-                else if (const auto* mouseButton = event->getIf<sf::Event::MouseButtonPressed>())
+                if (const auto* mouseButton = event->getIf<sf::Event::MouseButtonPressed>())
                 {
 
-                    if (mouseButton->button == sf::Mouse::Button::Right)
-                    {
-                        dragging = true;
-                        lastMousePos = sf::Mouse::getPosition(window);
-                    }
-
-                    else if (mouseButton->button == sf::Mouse::Button::Left)
+                    if (mouseButton->button == sf::Mouse::Button::Left)
                     {
 
                         auto mousePosition=sf::Mouse::getPosition(window);
 
                         if(ButtonPressed(confirmButton.getSprite(),(sf::Vector2f)mousePosition))
                         {
+                            clickSound.play();
                             if (taraSelectata!=nullptr)
                             {
 
@@ -211,6 +267,7 @@ int main()
                         }
                         else if (ButtonPressed(seeAgainButton.getSprite(),(sf::Vector2f)mousePosition))
                         {
+                            clickSound.play();
                             window.setView(window.getDefaultView());
                             gameState=1;
                         }
@@ -221,7 +278,13 @@ int main()
                             sf::Color color = image.getPixel({worldPos.x,worldPos.y});
 
                             if (color!=ocean)
+                            {
                                 taraSelectata = cautaTaraDupaCuloare(color, tari);
+                                if (taraSelectata!=nullptr)
+                                    clickSound.play();
+                            }
+
+
                             if (taraSelectata != nullptr)
                             {
                                 selectedCountryText.setString("Ai selectat: " + taraSelectata->getNume());
@@ -234,38 +297,38 @@ int main()
                         }
                     }
                 }
-                else if (event->is<sf::Event::MouseButtonReleased>())
+                if(event)
                 {
-
-                    if (event->getIf<sf::Event::MouseButtonReleased>()->button == sf::Mouse::Button::Right)
+                    MouseInteractions(*event,window,view,dragging,lastMousePos);
+                    if (event->is<sf::Event::MouseMoved>())
                     {
-                        dragging = false;
+
+                        if (dragging)
+                        {
+                            sf::Vector2i newMousePos = sf::Mouse::getPosition(window);
+                            sf::Vector2f delta = window.mapPixelToCoords(lastMousePos, view) - window.mapPixelToCoords(newMousePos, view);
+                            view.move(delta);
+                            lastMousePos = newMousePos;
+                        }
                     }
                 }
-                else if (event->is<sf::Event::MouseMoved>())
-                {
 
-                    if (dragging)
-                    {
-                        sf::Vector2i newMousePos = sf::Mouse::getPosition(window);
-                        sf::Vector2f delta = window.mapPixelToCoords(lastMousePos, view) - window.mapPixelToCoords(newMousePos, view);
-                        view.move(delta);
-                        lastMousePos = newMousePos;
-                    }
-                }
             }
             else if (gameState==3)
             {
                 correctAnswer.setString("Raspunsul corect a fost \n"+taraCorecta.getNume());
                 if(playAgainButton.Clicked())
                 {
-
+                    notPanorama=true;
+                    clickSound.play();
                     vieti=3;
-                    changeImage(imaginiDeGhicit,taraCorecta,introTexture,introSprite);
+                    //changeImage(imaginiDeGhicit,taraCorecta,extendedTexture,panoramaSprite,windowWidth,height);
+                    changeImage(imaginiDeGhicit,taraCorecta,extendedTexture,panoramaSprite);
+                    viewX = windowWidth;
                     harta_alba.loadFromImage(hartaAlbaGoala);
                     selectedCountryText.setString("Selecteaza o tara!");
-                    scaleSpriteRatio(introTexture.getSize(),window.getSize(),introSprite);
-                    spriteCenter(window.getSize(),introSprite);
+                    scaleSpriteRatio(extendedTexture.getSize(),window.getSize(),panoramaSprite);
+                    spriteCenter(window.getSize(),panoramaSprite);
                     gameState=1;
                 }
 
@@ -289,9 +352,12 @@ int main()
         else if (gameState==1)
         {
             guessButton.update(window);
+        if(!notPanorama)
+            {viewRect.position.x = viewX;
+            panoramaSprite.setTextureRect(viewRect);}
 
             window.draw(backImg);
-            window.draw(introSprite);
+            window.draw(panoramaSprite);
             closeButton.draw(window);
             guessButton.draw(window);
             drawHearts(hearts,noHearts,window,vieti);
@@ -318,7 +384,6 @@ int main()
             seeAgainButton.update(window);
             window.setView(view);
             window.draw(harta);
-
             window.setView(window.getDefaultView());
             window.draw(selectedCountryText);
             closeButton.draw(window);
@@ -327,9 +392,6 @@ int main()
             drawHearts(hearts,noHearts,window,vieti);
             window.setView(view);
         }
-      //  window.setView(window.getDefaultView());
-       // closeButton.draw(window);
-      //  window.setView(view);
         window.display();
     }
 }

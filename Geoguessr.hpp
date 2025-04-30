@@ -75,7 +75,33 @@ void changeImage(std::vector<std::pair<std::string, Tara>> img, Tara &taraCorect
     s=newintroSprite;
     s.setScale({1,1});
 }
+/*
+void changeImage(std::vector<std::pair<std::string, Tara>> img, Tara &taraCorecta,sf::Texture &extendedTexture, sf::Sprite &s, int windowWidth, int windowHeight)
+{   //sf::Texture texture;
+    int randomIndex = RandomIndex(img.size());
+    taraCorecta = img[randomIndex].second;
 
+    sf::Image originalImage;
+    if(!originalImage.loadFromFile(img[randomIndex].first))
+       {
+           std::cerr << "Nu am putut încãrca texturile!\n";
+        throw std::runtime_error("Eroare texturi!");
+       }
+
+    int originalWidth=originalImage.getSize().x;
+    sf::Image extendedImage;
+    extendedImage.resize({originalWidth + 2 * windowWidth, windowHeight});
+    extendedImage.copy(originalImage, {0, 0}, sf::IntRect({originalWidth - windowWidth, 0}, { windowWidth, windowHeight}));
+    extendedImage.copy(originalImage, {windowWidth, 0}, sf::IntRect({0, 0}, {originalWidth, windowHeight}));
+    extendedImage.copy(originalImage, {windowWidth + originalWidth, 0}, sf::IntRect({0, 0}, {windowWidth, windowHeight}));
+
+    //extendedImage.saveToFile("ext2.png");
+    extendedTexture.loadFromImage(extendedImage);
+    sf::Sprite panoramaSprite(extendedTexture);
+    s=panoramaSprite;
+    s.setScale({1,1});
+}
+*/
 
 bool ButtonPressed (sf::Sprite s, sf::Vector2f mousePos)
 {
@@ -125,12 +151,20 @@ void scaleSpriteRatio (sf::Vector2u textureSize,sf::Vector2u windowSize, sf::Spr
 
     s.setScale({finalScale*0.6,finalScale*0.6});
 }
+
+void scaleSpriteY (int textureSizeY,int windowSizeY, sf::Sprite &s)
+{
+    float scaleY = windowSizeY/ textureSizeY;
+    std::cout<<scaleY;
+    s.setScale({scaleY,scaleY});
+}
 void spriteCenter (sf::Vector2u windowSize, sf::Sprite &s)
 {
     sf::FloatRect spriteBounds = s.getLocalBounds();
     s.setOrigin({spriteBounds.size.x / 2.f, spriteBounds.size.y / 2.f});
     s.setPosition({windowSize.x / 2.f, windowSize.y / 2.f});
 }
+
 
 std::vector<std::pair<std::string, Tara>> incarcaImaginiDeGhicit ( std::vector<Tara> tari)
 {
@@ -143,6 +177,8 @@ std::vector<std::pair<std::string, Tara>> incarcaImaginiDeGhicit ( std::vector<T
     };
     return imagini;
 }
+
+
 std::vector<Tara> incarcaTari()
 {
     std::vector<Tara> tari =
